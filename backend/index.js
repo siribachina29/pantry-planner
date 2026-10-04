@@ -3,11 +3,22 @@ import cors from "cors";
 import multer from "multer";
 import fs from "fs";
 import dotenv from "dotenv";
+import Database from "better-sqlite3";
+
 
 dotenv.config();
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
+const db = new Database("pantry.db");
+db.exec(`
+  CREATE TABLE IF NOT EXISTS plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ingredients TEXT NOT NULL,
+    plan_json TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 const PORT = 3000;
 
 app.use(cors());
@@ -97,6 +108,24 @@ app.post("/plan", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Plan generation failed" });
   }
+});
+
+app.post("/save-plan", (req, res) => {
+  const{ ingredients, plan } = req.body;
+  const stmt = db.prepare("INSERT INTO plans (ingredients, plan_json) VALUES (?, ?)");
+  const result = stmt.run(JSON.stringify(ingredients), JSON.stringify(plan));
+  res.json({ saved: true, id: result.lastInsertRowid });
+});
+
+app.get("/plans", (req, res) => {
+  const rows = db.prepare("SELECT * FROM plans ORDER BY created_at DESC").all();
+  const parsed = rows.map((r) => ({ 
+    id: r.id,
+    ingredients: JSON.parse(r.ingredients),
+    plan: JSON.parse(r.plan_json),
+    created_at: r.created_at,
+  }));
+  res.json(parsed);
 });
 
 app.listen(PORT, () => {

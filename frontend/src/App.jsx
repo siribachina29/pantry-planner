@@ -48,6 +48,15 @@ function App() {
     setLoading(false);
   }
 
+  async function handleSavePlan() {
+    await fetch("http://localhost:3000/save-plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json"},
+      body: JSON.stringify({ ingredients, plan }),
+    });
+    alert("Plan saved!")
+  }
+
   return (
     <div style={{ maxWidth: 500, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Pantry Planner</h1>
@@ -82,7 +91,7 @@ function App() {
         </div>
       )}
 
-      {plan && (
+     {plan && (
         <div style={{ marginTop: 20 }}>
           <h3>Your Week</h3>
           {plan.days.map((d, i) => (
@@ -90,10 +99,11 @@ function App() {
               <strong>{d.day}:</strong> {d.meal} — <em>{d.note}</em>
             </div>
           ))}
+          <button onClick ={handleSavePlan}> Save This Plan</button>
         </div>
       )}
     </div>
   );
 }
 
-export default App;
+export default App; 
